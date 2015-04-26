@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>polify</title>
+    <script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script src="script.js"></script>
+  </head>
+  <body>
+    <input id="file"
+    type="file"
+    accept="image/*" />
+    <div>
+      <label for="complexity">complexity</label>
+      <input id="complexity"
+      type="range"
+      min="1"
+      max="5"
+      value="3"
+      step="1" />
+    </div>
+    <div>
+      <button id="process">process</button>
+    </div>
+    <canvas id="canvas"></canvas>
+  </body>
+</html>

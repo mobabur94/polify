@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="dark">#404040</color>
+    <color name="red">#ff4040</color>
+    <color name="red_alpha">#80ff4040</color>
+    <color name="yellow">#ffff40</color>
+</resources>
