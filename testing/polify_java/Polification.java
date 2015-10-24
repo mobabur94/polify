@@ -3,6 +3,10 @@ import java.util.Collections;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+
+import javax.swing.ImageIcon;
+import javax.swing.JOptionPane;
+
 import java.util.ArrayList;
 
 import java.lang.Math;
@@ -109,26 +113,34 @@ public class Polification {
         int result = (int) (percent * (ohi - olo)) + olo;
         return result;
     }
+    
+    public void debug() {
+    	ImageIcon icon = new ImageIcon();
+    	icon.setImage(image);
+    	JOptionPane.showMessageDialog(null, icon);
+    }
 
     public BufferedImage processImage() {
-        blur();
-        grayScale();
-        detectEdges();
+        // blur();
+        // grayScale();
+        // detectEdges();
 
-        createEdgePoints();
-        addRandomPoints();
-        // points = new ArrayList<Point>();
-        // points.add(new Point(60, 10));
-        // points.add(new Point(200, 560));
-        // points.add(new Point(840, 140));
-        // points.add(new Point(950, 900));
-        // points.add(new Point(80, 750));
-        // points.add(new Point(480, 320));
-        // points.add(new Point(720, 480));
-        // points.add(new Point(563, 622));
-        // points.add(new Point(920, 5));
-
+        // createEdgePoints();
+        // addRandomPoints();
+        points = new ArrayList<Point>();
+        points.add(new Point(60, 10));
+        points.add(new Point(200, 560));
+        points.add(new Point(840, 140));
+        points.add(new Point(950, 900));
+        points.add(new Point(80, 750));
+        points.add(new Point(480, 320));
+        points.add(new Point(720, 480));
+        points.add(new Point(563, 622));
         triangulate();
+        debug();
+        points.add(new Point(920, 5)); // problem occurs here
+        triangulate();
+        debug();
 
         return image;
     }

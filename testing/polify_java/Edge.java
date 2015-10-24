@@ -51,4 +51,9 @@ public class Edge {
         }
     }
 
+    @Override
+    public String toString() {
+        return String.format("%s -- %s", a, b);
+    }
+
 }

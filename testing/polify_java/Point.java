@@ -30,7 +30,7 @@ public class Point {
 
     @Override
     public String toString() {
-        return String.format("(%d, %d)\n", x, y);
+        return String.format("[%d, %d]", x, y);
     }
 
 }

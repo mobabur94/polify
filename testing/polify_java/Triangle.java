@@ -100,4 +100,9 @@ public class Triangle {
         this.circle = new Circle(center, radius);
     }
 
+    @Override
+    public String toString() {
+        return String.format("%s ++ %s ++ %s", aa, bb, cc);
+    }
+
 }
