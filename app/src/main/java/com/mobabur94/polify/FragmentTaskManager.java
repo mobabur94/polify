@@ -11,7 +11,7 @@ import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
-import com.mobabur94.polify.utility.Polification;
+import com.mobabur94.polify.util.Polification;
 
 import java.io.InputStream;
 
@@ -22,7 +22,7 @@ public class FragmentTaskManager extends Fragment {
         void photoPolified(Bitmap polification);
     }
 
-    public static FragmentTaskManager taskManager;
+    static FragmentTaskManager taskManager;
 
     public static FragmentTaskManager getTaskManager() {
         if (taskManager == null) {
@@ -31,8 +31,8 @@ public class FragmentTaskManager extends Fragment {
         return taskManager;
     }
 
-    public TaskLoadPhoto taskLoadPhoto;
-    public TaskPolifyPhoto taskPolifyPhoto;
+    TaskLoadPhoto taskLoadPhoto;
+    TaskPolifyPhoto taskPolifyPhoto;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -65,7 +65,7 @@ public class FragmentTaskManager extends Fragment {
         taskPolifyPhoto.execute(bitmap);
     }
 
-    public class TaskLoadPhoto extends AsyncTask<Uri, Integer, Bitmap> {
+    class TaskLoadPhoto extends AsyncTask<Uri, Integer, Bitmap> {
 
         IPhotoResponse photoHandler;
         ContentResolver resolver;
@@ -127,7 +127,7 @@ public class FragmentTaskManager extends Fragment {
 
     }
 
-    public class TaskPolifyPhoto extends AsyncTask<Bitmap, Integer, Bitmap> {
+    class TaskPolifyPhoto extends AsyncTask<Bitmap, Integer, Bitmap> {
 
         IPhotoResponse photoHandler;
 
@@ -148,10 +148,10 @@ public class FragmentTaskManager extends Fragment {
             // get the image
             Bitmap photo = params[0];
 
-            // use the polification class for modifying the bitmap
+            // create the polification
             Polification polification = new Polification(photo, complexity, stroke);
 
-            return polification.processPhoto();
+            return polification.getResult();
         }
 
         @Override

@@ -21,20 +21,21 @@ import android.widget.Toast;
 
 public class ActivityEdit extends Activity implements FragmentTaskManager.IPhotoResponse, SeekBar.OnSeekBarChangeListener, CompoundButton.OnCheckedChangeListener, View.OnTouchListener {
 
-    public Intent upIntent;
-    public ImageView imageView;
-    public ProgressBar progressBar;
-    public SeekBar complexityBar;
-    public CheckBox strokeToggle;
+    Intent upIntent;
 
-    public FragmentManager fragmentManager;
-    public FragmentTaskManager taskManager;
+    ImageView imageView;
+    ProgressBar progressBar;
+    SeekBar complexityBar;
+    CheckBox strokeToggle;
 
-    public Bitmap original;
-    public Bitmap altered;
+    FragmentManager fragmentManager;
+    FragmentTaskManager taskManager;
 
-    public int complexity;
-    public boolean stroke;
+    Bitmap original;
+    Bitmap altered;
+
+    int complexity;
+    boolean stroke;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -124,6 +125,31 @@ public class ActivityEdit extends Activity implements FragmentTaskManager.IPhoto
         polifyPhoto();
     }
 
+    void polifyPhoto() {
+        // show the progress bar
+        progressBar.setVisibility(View.VISIBLE);
+
+        // remove the touch listener
+        imageView.setOnTouchListener(null);
+
+        // polify the photo using the task manager
+        taskManager.polify(original, complexity + 1, stroke, this);
+    }
+
+    @Override
+    public void photoPolified(Bitmap polification) {
+        // save the polification
+        altered = polification;
+
+        // update the image view and set the touch listener
+        imageView.setImageBitmap(altered);
+        imageView.invalidate();
+        imageView.setOnTouchListener(this);
+
+        // hide the progress bar
+        progressBar.setVisibility(View.INVISIBLE);
+    }
+
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
         // update the complexity (0 -> 9 inclusive)
@@ -158,41 +184,21 @@ public class ActivityEdit extends Activity implements FragmentTaskManager.IPhoto
         if (id == R.id.canvas) {
             int action = motionEvent.getAction();
 
-            if (action == MotionEvent.ACTION_DOWN) {
+            // TODO: figure out how to actually do what i'm trying to do
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE) {
                 // replace with the original photo
                 imageView.setImageBitmap(original);
-
-                return true;
             } else if (action == MotionEvent.ACTION_UP) {
                 // replace with the altered photo
                 imageView.setImageBitmap(altered);
-
-                return true;
             }
+
+            imageView.invalidate();
+
+            return true;
         }
 
         return false;
-    }
-
-    void polifyPhoto() {
-        // show the progress bar
-        progressBar.setVisibility(View.VISIBLE);
-
-        // polify the photo using the task manager
-        taskManager.polify(original, complexity, stroke, this);
-    }
-
-    @Override
-    public void photoPolified(Bitmap polification) {
-        // save the polification
-        altered = polification;
-
-        // update the image view and set the touch listener
-        imageView.setImageBitmap(polification);
-        imageView.setOnTouchListener(this);
-
-        // hide the progress bar
-        progressBar.setVisibility(View.INVISIBLE);
     }
 
     @Override

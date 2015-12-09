@@ -3,14 +3,23 @@ package com.mobabur94.polify;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import org.opencv.android.OpenCVLoader;
+
 public class ActivityPolify extends Activity implements View.OnClickListener {
 
-    public Button choosePhoto;
-    public int PHOTO_REQUEST = 1;
+    static {
+        if (!OpenCVLoader.initDebug()) {
+            Log.d("POLIFY", "Failed to load OpenCV");
+        }
+    }
+
+    Button choosePhoto;
+    int PHOTO_REQUEST = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
