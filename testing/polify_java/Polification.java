@@ -121,26 +121,27 @@ public class Polification {
     }
 
     public BufferedImage processImage() {
-        // blur();
-        // grayScale();
-        // detectEdges();
+        blur();
+        grayScale();
+        detectEdges();
+        createEdgePoints();
+        addRandomPoints();
+        triangulate();
 
-        // createEdgePoints();
-        // addRandomPoints();
-        points = new ArrayList<Point>();
-        points.add(new Point(60, 10));
-        points.add(new Point(200, 560));
-        points.add(new Point(840, 140));
-        points.add(new Point(950, 900));
-        points.add(new Point(80, 750));
-        points.add(new Point(480, 320));
-        points.add(new Point(720, 480));
-        points.add(new Point(563, 622));
-        triangulate();
-        debug();
-        points.add(new Point(920, 5)); // problem occurs here
-        triangulate();
-        debug();
+        // points = new ArrayList<Point>();
+        // points.add(new Point(60, 10));
+        // points.add(new Point(200, 560));
+        // points.add(new Point(840, 140));
+        // points.add(new Point(950, 900));
+        // points.add(new Point(80, 750));
+        // points.add(new Point(480, 320));
+        // points.add(new Point(720, 480));
+        // points.add(new Point(563, 622));
+        // triangulate();
+        // debug();
+        // points.add(new Point(920, 5)); // problem occurs here
+        // triangulate();
+        // debug();
 
         return image;
     }
@@ -361,9 +362,11 @@ public class Polification {
         int yMid = (int) Math.round((yMax + yMin) / 2.0);
 
         // super triangle points
-        Point superA = new Point(xMid - (20 * dMax), yMid -       dMax);
+        // Point superA = new Point(xMid - (20 * dMax), yMid -       dMax);
+        Point superA = new Point(xMid - (20 * dMax), yMid - (20 * dMax));
         Point superB = new Point(xMid              , yMid + (20 * dMax));
-        Point superC = new Point(xMid + (20 * dMax), yMid -       dMax);
+        Point superC = new Point(xMid + (20 * dMax), yMid - (20 * dMax));
+        // Point superC = new Point(xMid + (20 * dMax), yMid -       dMax);
 
         // make the points sentinel
         superA.sentinel = true;
@@ -429,12 +432,12 @@ public class Polification {
                 int p = pixelsOriginal[index];
                 int a = (p >> 24) & 0xff;
 
-                // color = new Color(p, a < 0xff);
-                // graphics.setPaint(color);
-                // graphics.fillPolygon(t.xPoints, t.yPoints, 3);
-                graphics.setPaint(new Color(0xff0000));
-                graphics.drawPolygon(t.xPoints, t.yPoints, 3);
-                graphics.setPaint(new Color(0xffff00));
+                color = new Color(p, a < 0xff);
+                graphics.setPaint(color);
+                graphics.fillPolygon(t.xPoints, t.yPoints, 3);
+                // graphics.setPaint(new Color(0xff0000));
+                // graphics.drawPolygon(t.xPoints, t.yPoints, 3);
+                // graphics.setPaint(new Color(0xffff00));
                 // int circumradius = ((int) Math.round(t.circle.radius));
                 // graphics.drawOval(t.circle.center.x - 1, t.circle.center.y - 1, 2, 2);
                 // graphics.drawOval(t.circle.center.x - circumradius, t.circle.center.y - circumradius, circumradius * 2, circumradius * 2);
