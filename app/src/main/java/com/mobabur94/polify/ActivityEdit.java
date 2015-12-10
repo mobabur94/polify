@@ -152,6 +152,9 @@ public class ActivityEdit extends Activity implements FragmentTaskManager.IPhoto
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        // save the old complexity
+        int old = complexity;
+
         // update the complexity (0 -> 9 inclusive)
         complexity = (int) Math.round(progress / 9.0);
 
@@ -159,7 +162,9 @@ public class ActivityEdit extends Activity implements FragmentTaskManager.IPhoto
         seekBar.setProgress(complexity * 9);
 
         // polify the photo
-        polifyPhoto();
+        if (complexity != old) {
+            polifyPhoto();
+        }
     }
 
     @Override
@@ -184,8 +189,7 @@ public class ActivityEdit extends Activity implements FragmentTaskManager.IPhoto
         if (id == R.id.canvas) {
             int action = motionEvent.getAction();
 
-            // TODO: figure out how to actually do what i'm trying to do
-            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_MOVE) {
+            if (action == MotionEvent.ACTION_DOWN) {
                 // replace with the original photo
                 imageView.setImageBitmap(original);
             } else if (action == MotionEvent.ACTION_UP) {

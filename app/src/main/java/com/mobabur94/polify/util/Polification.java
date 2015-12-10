@@ -1,11 +1,19 @@
 package com.mobabur94.polify.util;
 
 import android.graphics.Bitmap;
+import android.util.Log;
 
 import org.opencv.android.Utils;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Polification {
 
@@ -67,16 +75,28 @@ public class Polification {
         Imgproc.cvtColor(altered, opaque, Imgproc.COLOR_RGBA2RGB);
 
         // apply a bilateral blur to keep edges intact
-        Mat blur = new Mat();
-        Imgproc.bilateralFilter(opaque, blur, complexity + 5, complexity * 15, complexity * 15);
+        // Mat blur = new Mat();
+        // Imgproc.bilateralFilter(opaque, blur, complexity + 5, complexity * 15, complexity * 15);
 
         // grayscale to aid with edge detection
-        Mat gray = new Mat();
-        Imgproc.cvtColor(blur, gray, Imgproc.COLOR_RGBA2GRAY);
+        // Mat gray = new Mat();
+        // Imgproc.cvtColor(blur, gray, Imgproc.COLOR_RGBA2GRAY);
 
-        // TODO: detect the edges
+        // detect the edges
+        Mat edges = new Mat();
+        Imgproc.Canny(opaque, edges, 150 - (complexity * 10), 250 - (complexity * 10));
 
-        // TODO: create points along the detected edges
+        // TODO: get points along the detected edges
+        List<MatOfPoint> contours = new ArrayList<>();
+        Imgproc.findContours(edges, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_TC89_KCOS);
+        List<Point> points = new ArrayList<>();
+        for (MatOfPoint mat : contours) {
+            points.addAll(mat.toList()); // TODO: find a better way to access the points
+        }
+        Mat debug = Mat.zeros(edges.rows(), edges.cols(), CvType.CV_8UC3);
+        for (Point p : points) {
+            Imgproc.circle(debug, p, 1, new Scalar(255, 0, 0));
+        }
 
         // TODO: add some random points to make it seem more natural
 
@@ -85,7 +105,7 @@ public class Polification {
         // TODO: fill each triangle with an average color
 
         // commit result
-        altered = gray;
+        altered = debug;
 
         // convert the matrix into a photo
         Bitmap result = Bitmap.createBitmap(altered.width(), altered.height(), Bitmap.Config.ARGB_8888);
