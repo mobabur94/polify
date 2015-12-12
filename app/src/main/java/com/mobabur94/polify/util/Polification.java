@@ -4,21 +4,33 @@ import android.graphics.Bitmap;
 import android.util.Log;
 
 import org.opencv.android.Utils;
+import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfFloat6;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.imgproc.Subdiv2D;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Random;
+import java.util.Set;
 
 public class Polification {
 
+    int size;
     int complexity;
     boolean stroke;
+
+    Random randomizer;
 
     Mat original;
     Mat altered;
@@ -26,16 +38,22 @@ public class Polification {
     Bitmap result;
 
     public Polification (Bitmap photo, int complexity, boolean stroke) {
+        // set the size of the image [maximum dimension]
+        this.size = 1080;
+
         // get the complexity and stroke
         this.complexity = complexity;
         this.stroke = stroke;
+
+        // get a randomizer
+        this.randomizer = new Random();
 
         // prepare the matrices
         this.original = new Mat();
         this.altered = new Mat();
 
         // get the photo and resize it to a max dimension of 1080px
-        this.original = resize(photo, 1080);
+        this.original = resize(photo);
 
         // use an altered copy so we can retain color info for later
         this.altered = this.original.clone();
@@ -48,7 +66,7 @@ public class Polification {
         return result;
     }
 
-    Mat resize (Bitmap photo, int d) {
+    Mat resize (Bitmap photo) {
         // prepare the matrices
         Mat result = new Mat();
         Mat unscaled = new Mat();
@@ -59,11 +77,11 @@ public class Polification {
         // scale down to d with INTER_AREA or up to d with INTER_LINEAR
         int w = photo.getWidth();
         int h = photo.getHeight();
-        int interpolation = (w > d || h > d) ? Imgproc.INTER_AREA : Imgproc.INTER_LINEAR;
+        int interpolation = (w > size || h > size) ? Imgproc.INTER_AREA : Imgproc.INTER_LINEAR;
         if (w > h) {
-            Imgproc.resize(unscaled, result, new Size(d, d * (h / (double) w)), 0, 0, interpolation);
+            Imgproc.resize(unscaled, result, new Size(size, size * (h / (double) w)), 0, 0, interpolation);
         } else {
-            Imgproc.resize(unscaled, result, new Size(d * (w / (double) h), d), 0, 0, interpolation);
+            Imgproc.resize(unscaled, result, new Size(size * (w / (double) h), size), 0, 0, interpolation);
         }
 
         return result;
@@ -74,38 +92,61 @@ public class Polification {
         Mat opaque = new Mat();
         Imgproc.cvtColor(altered, opaque, Imgproc.COLOR_RGBA2RGB);
 
-        // apply a bilateral blur to keep edges intact
-        // Mat blur = new Mat();
-        // Imgproc.bilateralFilter(opaque, blur, complexity + 5, complexity * 15, complexity * 15);
-
-        // grayscale to aid with edge detection
-        // Mat gray = new Mat();
-        // Imgproc.cvtColor(blur, gray, Imgproc.COLOR_RGBA2GRAY);
-
         // detect the edges
         Mat edges = new Mat();
         Imgproc.Canny(opaque, edges, 150 - (complexity * 10), 250 - (complexity * 10));
 
-        // TODO: get points along the detected edges
+        // get points along the detected edges
         List<MatOfPoint> contours = new ArrayList<>();
         Imgproc.findContours(edges, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_TC89_KCOS);
         List<Point> points = new ArrayList<>();
         for (MatOfPoint mat : contours) {
-            points.addAll(mat.toList()); // TODO: find a better way to access the points
+            for (Point p : mat.toList()) {
+                if (randomizer.nextInt(10) < 3) {
+                    points.add(p);
+                }
+            }
         }
-        Mat debug = Mat.zeros(edges.rows(), edges.cols(), CvType.CV_8UC3);
-        for (Point p : points) {
-            Imgproc.circle(debug, p, 1, new Scalar(255, 0, 0));
+
+        // add random points to make it seem more natural
+        int remaining = (int) (Math.sqrt(opaque.width() * opaque.height()) / 2);
+        for (int i = 0; i < remaining; i++) {
+            int x = randomizer.nextInt(opaque.width());
+            int y = randomizer.nextInt(opaque.height());
+            points.add(new Point(x, y));
         }
 
-        // TODO: add some random points to make it seem more natural
+        // triangulate the points into a delaunay triangulation
+        MatOfPoint2f vertices = new MatOfPoint2f();
+        vertices.fromList(points);
+        Rect outline = new Rect(0, 0, opaque.width(), opaque.height());
+        Subdiv2D triangulation = new Subdiv2D();
+        triangulation.initDelaunay(outline);
+        triangulation.insert(vertices);
 
-        // TODO: triangulate the points into a delaunay triangulation
-
-        // TODO: fill each triangle with an average color
+        // paint the triangles
+        Mat canvas = Mat.zeros(opaque.size(), CvType.CV_8UC3);
+        MatOfFloat6 triangles = new MatOfFloat6();
+        triangulation.getTriangleList(triangles);
+        float[] t = new float[6];
+        Point[] p = new Point[3];
+        Scalar maskColor = new Scalar(255, 255, 255);
+        for (int y = 0; y < triangles.rows(); y++) {
+            for (int x = 0; x < triangles.cols(); x++) {
+                triangles.get(y, x, t);
+                p[0] = new Point(t[0], t[1]);
+                p[1] = new Point(t[2], t[3]);
+                p[2] = new Point(t[4], t[5]);
+                MatOfPoint triangle = new MatOfPoint(p);
+                Mat mask = Mat.zeros(opaque.size(), CvType.CV_8UC1);
+                Imgproc.fillConvexPoly(mask, triangle, maskColor);
+                Scalar averageColor = Core.mean(opaque, mask);
+                Imgproc.fillConvexPoly(canvas, triangle, averageColor);
+            }
+        }
 
         // commit result
-        altered = debug;
+        altered = canvas;
 
         // convert the matrix into a photo
         Bitmap result = Bitmap.createBitmap(altered.width(), altered.height(), Bitmap.Config.ARGB_8888);
