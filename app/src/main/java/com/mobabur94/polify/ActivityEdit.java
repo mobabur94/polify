@@ -152,26 +152,21 @@ public class ActivityEdit extends Activity implements FragmentTaskManager.IPhoto
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-        // save the old complexity
-        int old = complexity;
-
         // update the complexity (0 -> 9 inclusive)
         complexity = (int) Math.round(progress / 9.0);
 
         // update the seek bar to the rounded value
         seekBar.setProgress(complexity * 9);
-
-        // polify the photo
-        if (complexity != old) {
-            polifyPhoto();
-        }
     }
 
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) { }
 
     @Override
-    public void onStopTrackingTouch(SeekBar seekBar) { }
+    public void onStopTrackingTouch(SeekBar seekBar) {
+        // polify the photo
+        polifyPhoto();
+    }
 
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {

@@ -110,7 +110,7 @@ public class FragmentTaskManager extends Fragment {
                 return BitmapFactory.decodeStream(inputStream, null, options);
             } catch (Exception e) {
                 // TODO: replace huge catch with something that makes more sense
-                Log.d(getClass().getName(), "doInBackground exception", e);
+                Log.e(getClass().getName(), "load photo exception", e);
                 return null;
             }
         }

@@ -15,14 +15,12 @@ import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.imgproc.Moments;
 import org.opencv.imgproc.Subdiv2D;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
 public class Polification {
 
@@ -39,7 +37,7 @@ public class Polification {
 
     public Polification (Bitmap photo, int complexity, boolean stroke) {
         // set the size of the image [maximum dimension]
-        this.size = 1080;
+        this.size = 1000;
 
         // get the complexity and stroke
         this.complexity = complexity;
@@ -88,17 +86,23 @@ public class Polification {
     }
 
     Bitmap process () {
-        // get rid of alpha channel
-        Mat opaque = new Mat();
-        Imgproc.cvtColor(altered, opaque, Imgproc.COLOR_RGBA2RGB);
+        // get colored and grayscale versions
+        Mat colored = new Mat();
+        Mat uncolored = new Mat();
+        Imgproc.cvtColor(altered, colored, Imgproc.COLOR_RGBA2RGB);
+        Imgproc.cvtColor(colored, uncolored, Imgproc.COLOR_RGB2GRAY);
+
+        // blur a bit
+        Imgproc.GaussianBlur(uncolored, uncolored, new Size(5, 5), 0);
+        Imgproc.GaussianBlur(colored, colored, new Size(5, 5), 0);
 
         // detect the edges
         Mat edges = new Mat();
-        Imgproc.Canny(opaque, edges, 150 - (complexity * 10), 250 - (complexity * 10));
+        Imgproc.Canny(uncolored, edges, 150 - (complexity * 10), 450 - (complexity * 30));
 
         // get points along the detected edges
         List<MatOfPoint> contours = new ArrayList<>();
-        Imgproc.findContours(edges, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_TC89_KCOS);
+        Imgproc.findContours(edges.clone(), contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_TC89_KCOS);
         List<Point> points = new ArrayList<>();
         for (MatOfPoint mat : contours) {
             for (Point p : mat.toList()) {
@@ -109,41 +113,53 @@ public class Polification {
         }
 
         // add random points to make it seem more natural
-        int remaining = (int) (Math.sqrt(opaque.width() * opaque.height()) / 2);
+        int remaining = (int) (Math.sqrt(original.width() * original.height()) / 2);
         for (int i = 0; i < remaining; i++) {
-            int x = randomizer.nextInt(opaque.width());
-            int y = randomizer.nextInt(opaque.height());
+            int x = randomizer.nextInt(original.width());
+            int y = randomizer.nextInt(original.height());
             points.add(new Point(x, y));
         }
 
+        Log.d(getClass().getName(), "initializing delaunay...");
         // triangulate the points into a delaunay triangulation
         MatOfPoint2f vertices = new MatOfPoint2f();
         vertices.fromList(points);
-        Rect outline = new Rect(0, 0, opaque.width(), opaque.height());
+        Rect outline = new Rect(0, 0, original.width(), original.height());
         Subdiv2D triangulation = new Subdiv2D();
         triangulation.initDelaunay(outline);
+        Log.d(getClass().getName(), "done initializing delaunay");
+        Log.d(getClass().getName(), "inserting vertices...");
         triangulation.insert(vertices);
+        Log.d(getClass().getName(), "done inserting vertices");
 
         // paint the triangles
-        Mat canvas = Mat.zeros(opaque.size(), CvType.CV_8UC3);
+        Mat canvas = Mat.zeros(original.size(), CvType.CV_8UC3);
         MatOfFloat6 triangles = new MatOfFloat6();
         triangulation.getTriangleList(triangles);
         float[] t = new float[6];
         Point[] p = new Point[3];
         Scalar maskColor = new Scalar(255, 255, 255);
+        Log.d(getClass().getName(), "painting triangles...");
         for (int y = 0; y < triangles.rows(); y++) {
             for (int x = 0; x < triangles.cols(); x++) {
                 triangles.get(y, x, t);
                 p[0] = new Point(t[0], t[1]);
                 p[1] = new Point(t[2], t[3]);
                 p[2] = new Point(t[4], t[5]);
+//                Log.d(getClass().getName(), String.format("triangle: (%d , %d) => points: (%.2f , %.2f) (%.2f , %.2f) (%.2f , %.2f)", y, x, t[0], t[1], t[2], t[3], t[4], t[5]));
                 MatOfPoint triangle = new MatOfPoint(p);
-                Mat mask = Mat.zeros(opaque.size(), CvType.CV_8UC1);
-                Imgproc.fillConvexPoly(mask, triangle, maskColor);
-                Scalar averageColor = Core.mean(opaque, mask);
-                Imgproc.fillConvexPoly(canvas, triangle, averageColor);
+                Moments moments = Imgproc.moments(triangle);
+                int cx = (int) Math.round(moments.get_m10() / moments.get_m00());
+                int cy = (int) Math.round(moments.get_m01() / moments.get_m00());
+                Scalar color = new Scalar(colored.get(cy, cx));
+                Imgproc.fillConvexPoly(canvas, triangle, color);
+//                Mat mask = Mat.zeros(original.size(), CvType.CV_8UC1);
+//                Imgproc.fillConvexPoly(mask, triangle, maskColor);
+//                Scalar averageColor = Core.mean(colored, mask);
+//                Imgproc.fillConvexPoly(canvas, triangle, averageColor);
             }
         }
+        Log.d(getClass().getName(), "done painting triangles");
 
         // commit result
         altered = canvas;

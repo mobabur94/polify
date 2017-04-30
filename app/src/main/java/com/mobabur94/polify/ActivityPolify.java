@@ -14,7 +14,7 @@ public class ActivityPolify extends Activity implements View.OnClickListener {
 
     static {
         if (!OpenCVLoader.initDebug()) {
-            Log.d("POLIFY", "Failed to load OpenCV");
+            Log.e("ActivityPolify", "Failed to load OpenCV");
         }
     }
 
